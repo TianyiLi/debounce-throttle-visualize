@@ -1,15 +1,15 @@
-import React, { useEffect, useMemo, useState } from 'react';
-import logo from './logo.svg';
-import './App.css';
-import { observer } from 'mobx-react-lite';
+import React, { useEffect, useMemo, useState } from 'react'
+import logo from './logo.svg'
+import './App.css'
+import { observer } from 'mobx-react-lite'
 
-import range from 'lodash/range';
-import styled from 'styled-components';
-import classNames from 'classnames';
-import { clicker } from './store/clicker';
-import { autorun, reaction, when } from 'mobx';
-import debounce from 'lodash/debounce';
-import throttle from 'lodash/throttle';
+import range from 'lodash/range'
+import styled from 'styled-components'
+import classNames from 'classnames'
+import { clicker } from './store/clicker'
+import { autorun, reaction, when } from 'mobx'
+import debounce from 'lodash/debounce'
+import throttle from 'lodash/throttle'
 const ProgressStyled = styled.div`
   width: 100%;
   display: flex;
@@ -30,11 +30,11 @@ const ProgressStyled = styled.div`
     }
     background-color: #efefef;
   }
-`;
+`
 
 const ProgressBlock: React.FC<{
-  ele: { click: boolean; act: boolean };
-  i: number;
+  ele: { click: boolean; act: boolean }
+  i: number
 }> = observer((props) => {
   return (
     <div
@@ -43,8 +43,8 @@ const ProgressBlock: React.FC<{
         active: props.ele.act,
       })}
     ></div>
-  );
-});
+  )
+})
 
 const Progress: React.FC<{ pinned: { click: boolean; act: boolean }[] }> =
   observer((props) => {
@@ -54,8 +54,8 @@ const Progress: React.FC<{ pinned: { click: boolean; act: boolean }[] }> =
           <ProgressBlock ele={ele} key={index} i={index} />
         ))}
       </ProgressStyled>
-    );
-  });
+    )
+  })
 
 function App() {
   const [throttleList] = useState(() =>
@@ -64,7 +64,7 @@ function App() {
       list: range(0, 1000).map((_) => ({ click: false, act: false })),
       start: false,
     })
-  );
+  )
 
   const [debounceList] = useState(() =>
     clicker.create({
@@ -72,54 +72,70 @@ function App() {
       list: range(0, 1000).map((_) => ({ click: false, act: false })),
       start: false,
     })
-  );
+  )
 
-  const throttleClick = useMemo(() => throttle(throttleList.click, 1200), []);
-  const debounceClick = useMemo(() => debounce(debounceList.click, 1200), []);
+  const [lead, setLead] = useState(0)
+
+  const throttleClick = useMemo(
+    () => throttle(throttleList.click, 1200),
+    [lead]
+  )
+  const debounceClick = useMemo(
+    () => debounce(debounceList.click, 1200, { leading: !!lead ,}),
+    [lead]
+  )
 
   useEffect(() => {
-    let throttleId = -1;
+    let throttleId = -1
     const throttleDeposer = autorun(() => {
       if (throttleList.start)
-        throttleId = setInterval(throttleList.increase, 100);
+        throttleId = setInterval(throttleList.increase, 100)
       else {
-        clearInterval(throttleId);
-        throttleList.reset();
+        clearInterval(throttleId)
+        throttleList.reset()
       }
-    });
+    })
 
-    let debounceId = -1;
+    let debounceId = -1
     const debounceDeposer = autorun(() => {
       if (debounceList.start)
-        debounceId = setInterval(debounceList.increase, 100);
+        debounceId = setInterval(debounceList.increase, 100)
       else {
-        clearInterval(debounceId);
-        debounceList.reset();
+        clearInterval(debounceId)
+        debounceList.reset()
       }
-    });
+    })
 
     return () => {
-      clearInterval(throttleId);
-      clearInterval(debounceId);
-      throttleDeposer();
-      debounceDeposer();
-    };
-  }, []);
+      clearInterval(throttleId)
+      clearInterval(debounceId)
+      throttleDeposer()
+      debounceDeposer()
+    }
+  }, [])
 
   return (
     <div className="App">
+      <label>lead</label>
+      <input
+        type="checkbox"
+        checked={!!lead}
+        onChange={(e) => {
+          setLead(e.target.checked ? 1 : 0)
+        }}
+      />
       <button
         onClick={() => {
-          debounceList.reset();
-          throttleList.reset();
+          debounceList.reset()
+          throttleList.reset()
         }}
       >
         reset
       </button>
       <button
         onClick={() => {
-          debounceList.startCount();
-          throttleList.startCount();
+          debounceList.startCount()
+          throttleList.startCount()
         }}
       >
         start
@@ -136,7 +152,7 @@ function App() {
         <Progress pinned={throttleList.list} />
       </div>
     </div>
-  );
+  )
 }
 
-export default observer(App);
+export default observer(App)
